@@ -3,8 +3,8 @@ A simple model of the orbits of Earth and Jupiter around the sun. Model in C++ w
 
 To run this simple simulation:
 
-`g++ -g hw4_problem1.cpp -o orbit -Wall
+`g++ -g hw4_problem1.cpp -o orbit -Wall`
 
-./orbit
+`./orbit`
 
-python3 plot.py`
+`python3 plot.py`
