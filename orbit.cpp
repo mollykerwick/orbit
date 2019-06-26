@@ -150,7 +150,7 @@ void derivsPlanet(double t, vector<double>& Earth, vector<double>& Jupiter, vect
 }
 
 int main() {
-	double AU = 149597870.691; // km
+	// double AU = 149597870.691; // km	(always a good value to have on hand)
 	vector<double> Earth;	// Earth = [x0,vx0,y0,vy0]
 	// starting positions used for Runge Kutta 4
 	Earth.push_back(0.983);
