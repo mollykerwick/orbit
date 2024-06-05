@@ -13,3 +13,12 @@ To run this simple simulation:
 
 `python3 plot.py`
 
+
+
+=====MINICONDA INSTALLATION ISSUES=====
+
+from: https://stackoverflow.com/questions/31615322/zsh-conda-pip-installs-command-not-found
+
+SUMMARY:
+
+For the miniconda installation to initialize upon opening the terminal, add `source ~/.bash_profile` to your ~/.zshrc. This is because the miniconda installation instructions call for editing your PATH from ~/.bash_profile, but for macOS, the terminal default runs zsh instead of bash.
