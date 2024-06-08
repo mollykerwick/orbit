@@ -9,7 +9,7 @@ To run this simple simulation:
 
 `g++ -g orbit.cpp -o orbit -Wall`
 
-`./orbit`
+`./orbit <optional Earth mass scale> <optional Jupiter mass scale>`
 
 `python3 plot.py`
 
