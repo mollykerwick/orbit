@@ -12,9 +12,9 @@ OUTPUTS 3 files:
 	Earth_periodicity.txt: 	a 2d timeseries of the position of the Earth relative to
 													some starting position. Formatted in two columns
 													'time xposition'
-	hw4_orbit_Earth.txt: 		a 2d plot of the Earth's orbit around the sun.
+	orbit_Earth.txt: 		a 2d plot of the Earth's orbit around the sun.
 													Formatted in two columns 'xposition yposition'
-	hw4_orbit_Jupiter.txt: 	a 2d plot of the Earth's orbit around the sun.
+	orbit_Jupiter.txt: 	a 2d plot of Jupiters's orbit around the sun.
 													Formatted in two columns 'xposition yposition'
 
 
@@ -26,6 +26,7 @@ OUTPUTS 3 files:
 #include <vector>
 #include <math.h>
 #include <cmath>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -71,7 +72,8 @@ using namespace std;
 void rk4(vector<double> &Earth, vector<double> &Jupiter, vector<double> &Earth_dydx,
 	vector<double> &Jupiter_dydx, const double x, const double h,
 	vector<double> &Earth_UPDATED, vector<double> &Jupiter_UPDATED,
-	void derivs(double, vector<double> &, vector<double> &, vector<double> &, vector<double> &)) {
+	void derivs(double, vector<double> &, vector<double> &, vector<double> &, vector<double> &, float, float), 
+	const float Earth_scale, const float Jupiter_scale) {
 
 	int n = Earth.size();
 	vector<double> Earth_dym(n),Earth_dyt(n),Earth_yt(n);
@@ -84,14 +86,14 @@ void rk4(vector<double> &Earth, vector<double> &Jupiter, vector<double> &Earth_d
 		Jupiter_yt[i]=Jupiter[i]+h_2*Jupiter_dydx[i];
 	}
 
-	derivs(x+h_2,Earth_yt,Jupiter_yt,Earth_dyt,Jupiter_dyt);
+	derivs(x+h_2,Earth_yt,Jupiter_yt,Earth_dyt,Jupiter_dyt,Earth_scale,Jupiter_scale);
 
 	for (int i = 0; i < n; i++) {
 		Earth_yt[i]=Earth[i]+h_2*Earth_dyt[i];
 		Jupiter_yt[i]=Jupiter[i]+h_2*Jupiter_dyt[i];
 	}
 
-	derivs(x+h_2,Earth_yt,Jupiter_yt,Earth_dym,Jupiter_dym);
+	derivs(x+h_2,Earth_yt,Jupiter_yt,Earth_dym,Jupiter_dym,Earth_scale,Jupiter_scale);
 
 	for (int i = 0; i < n; i++) {
 		Earth_yt[i]=Earth[i]+h*Earth_dym[i];
@@ -100,7 +102,7 @@ void rk4(vector<double> &Earth, vector<double> &Jupiter, vector<double> &Earth_d
 		Jupiter_dym[i] += Jupiter_dyt[i];
 	}
 
-	derivs(x+h,Earth_yt,Jupiter_yt,Earth_dyt,Jupiter_dyt); //derivs(x+h,yt,dyt);
+	derivs(x+h,Earth_yt,Jupiter_yt,Earth_dyt,Jupiter_dyt,Earth_scale,Jupiter_scale); //derivs(x+h,yt,dyt);
 
 	for (int i=0;i<n;i++) {
 		Earth_UPDATED[i]=Earth[i]+h_6*(Earth_dydx[i]+Earth_dyt[i]+2.0*Earth_dym[i]);
@@ -109,17 +111,22 @@ void rk4(vector<double> &Earth, vector<double> &Jupiter, vector<double> &Earth_d
 
 }
 
-void derivsPlanet(double t, vector<double>& Earth, vector<double>& Jupiter, vector<double>& Earth_dydx, vector<double>& Jupiter_dydx) {
+void derivsPlanet(double t, vector<double>& Earth, vector<double>& Jupiter, 
+	vector<double>& Earth_dydx, vector<double>& Jupiter_dydx, const float Earth_scale, const float Jupiter_scale) {
+
 	double G = 39.483;// AU^(3/2) / (D(M)^1/2) where D is solar day and M is solar mass
 
 	// masses are written in terms of fractions of Sun's mass
 
 	double mass_Sun = 1;
 	// double mass_Sun = 2;
-	double mass_J = 1/1048.;
+	double mass_J = (1/1048.) * Jupiter_scale;
+	// cout << "Jupiter mass " << mass_J << endl;
 
 	//double mass_E = 1/332.;
-	double mass_E = 1/332950.;
+	double mass_E = (1/332950.) * Earth_scale;
+	// cout << "Earth mass " << mass_E << endl;
+
 
 
 	double sun_acceleration_1 = G*mass_Sun * pow(Earth[0]*Earth[0] + Earth[2]*Earth[2], -1.5);
@@ -149,7 +156,17 @@ void derivsPlanet(double t, vector<double>& Earth, vector<double>& Jupiter, vect
 	Jupiter_dydx[3] = -Jupiter[2] * value_2;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+	float Earth_scale = 1.;  // default scale of the Earth
+	float Jupiter_scale = 1.;  // default scale of the Earth
+
+	cout << argc << endl;
+	if (argc > 1) {  // a new scale for Earth has been input
+		Earth_scale = atof(argv[1]);
+	} if (argc > 2) {  // new scale for Jupiter has been provided
+		Jupiter_scale = atof(argv[2]);
+	}
+
 	// double AU = 149597870.691; // km	(always a good value to have on hand)
 	vector<double> Earth;	// Earth = [x0,vx0,y0,vy0]
 	// starting positions used for Runge Kutta 4
@@ -158,7 +175,7 @@ int main() {
 	Earth.push_back(0);
 	Earth.push_back(6.392);
 
-	vector<double> Jupiter;	// Earth = [x0,vx0,y0,vy0]
+	vector<double> Jupiter;	// Jupiter = [x0,vx0,y0,vy0]
 	Jupiter.push_back(4.95);
 	Jupiter.push_back(0);
 	Jupiter.push_back(0);
@@ -167,14 +184,14 @@ int main() {
 	vector<double> Earth_dydx(4,0.0);
 	vector<double> Jupiter_dydx(4,0.0);
 
-	derivsPlanet(0,Earth,Jupiter,Earth_dydx,Jupiter_dydx);
+	derivsPlanet(0,Earth,Jupiter,Earth_dydx,Jupiter_dydx,Earth_scale,Jupiter_scale);
 
-	double h = 0.001;
+	double h = 0.001;  // time step size for RK4 'h'
 	vector<double> Earth_UPDATED(Earth);
 	vector<double> Jupiter_UPDATED(Jupiter);
 
-	ofstream file_a("hw4_orbit_Earth.txt");
-	ofstream file_b("hw4_orbit_Jupiter.txt");
+	ofstream file_a("orbit_Earth.txt");
+	ofstream file_b("orbit_Jupiter.txt");
 
 	double t = 0;
 
@@ -183,7 +200,7 @@ int main() {
 	ofstream period("Earth_periodicity.txt");
 	for (double i = 0; i < 5000000; i+=100) {
 		t = i*h;
-		rk4(Earth,Jupiter,Earth_dydx,Jupiter_dydx,t,h,Earth_UPDATED,Jupiter_UPDATED,derivsPlanet);
+		rk4(Earth,Jupiter,Earth_dydx,Jupiter_dydx,t,h,Earth_UPDATED,Jupiter_UPDATED,derivsPlanet,Earth_scale,Jupiter_scale);
 		Earth = Earth_UPDATED;
 		Jupiter = Jupiter_UPDATED;
 		file_a << Earth[0] << " " << Earth[2] << endl;
@@ -192,7 +209,7 @@ int main() {
 		if (abs(Earth[2]) < 0.01) Earth_orbits++;
 		if (abs(Jupiter[2]) < 0.005) Jupiter_orbits++;
 
-		derivsPlanet(t,Earth,Jupiter,Earth_dydx,Jupiter_dydx);
+		derivsPlanet(t,Earth,Jupiter,Earth_dydx,Jupiter_dydx,Earth_scale,Jupiter_scale);
 
 	}
 	file_a.close();
@@ -202,6 +219,6 @@ int main() {
 	cout << Earth_orbits/2. << endl;
 	cout << Jupiter_orbits/2. << endl;
 
-
+  
 
 }
